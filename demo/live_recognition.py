@@ -221,11 +221,45 @@ def list_registered():
         print("No one registered yet")
 
 
+def predict_image(image_path):
+    gallery = load_gallery()
+    if not gallery:
+        print("No registered faces. Run with --register first.")
+        return
+
+    img = cv2.imread(image_path)
+    if img is None:
+        print(f"Error: Cannot load {image_path}")
+        return
+
+    faces = detect_faces(img)
+    if not faces:
+        print("No faces detected")
+        return
+
+    for (x, y, w, h), face in faces:
+        emb = get_embedding(face)
+        name, conf = recognize(emb, gallery)
+        label = f"{name} ({conf:.0%})"
+
+        cv2.rectangle(img, (x, y), (x + w, y + h), (0, 255, 0), 2)
+        cv2.putText(img, label, (x, y - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+        print(f"  {label}")
+
+    cv2.namedWindow("Result", cv2.WINDOW_AUTOSIZE)
+    cv2.setWindowProperty("Result", cv2.WND_PROP_TOPMOST, 1)
+    cv2.imshow("Result", img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Live Face Recognition (no training needed)")
     parser.add_argument("--register", type=str, help="Register a new person (name)")
     parser.add_argument("--count", type=int, default=10, help="Photos to capture during registration")
     parser.add_argument("--webcam", action="store_true", help="Run live recognition")
+    parser.add_argument("--image", type=str, help="Recognize faces in an image file")
     parser.add_argument("--camera", type=int, default=0, help="Camera device ID")
     parser.add_argument("--list", action="store_true", help="List registered people")
     args = parser.parse_args()
@@ -236,6 +270,8 @@ def main():
         register(args.register, args.count, args.camera)
     elif args.webcam:
         recognize_webcam(args.camera)
+    elif args.image:
+        predict_image(args.image)
     else:
         parser.print_help()
 
