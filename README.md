@@ -1,75 +1,86 @@
-# Computer Vision Project — Face Recognition
+# 🧠 Face Recognition — Live Demo
 
-Three face recognition approaches: ResNet50 (PyTorch), ArcFace (DeepFace), and Traditional CV (hand-crafted features).
+![Python](https://img.shields.io/badge/Python-3.8+-blue?logo=python)
+![DeepFace](https://img.shields.io/badge/DeepFace-4285F4)
+![OpenCV](https://img.shields.io/badge/OpenCV-5C3EE8?logo=opencv)
+![PyTorch](https://img.shields.io/badge/PyTorch-FF6F00?logo=pytorch)
 
-## Project Structure
+**Zero-shot face recognition** — register your face from webcam, recognize instantly. No training needed.
 
-```
-├── Resnet50/              # Deep learning — PyTorch ResNet50
-│   ├── train.py           # Train classifier
-│   ├── model.py           # ResNet50 model definition
-│   ├── dataset.py         # FaceDataset loader
-│   ├── preprocessing.py   # MediaPipe face alignment
-│   ├── split_dataset.py   # Train/val split
-│   └── evaluate_identification.py
-├── arcface/               # DeepFace ArcFace embeddings
-│   ├── train_arcface.py   # Extract embeddings → train LogisticRegression
-│   ├── evaluate_arcface.py
-│   └── evaluate_verification.py
-├── traditional/           # Hand-crafted features + PCA + KNN
-│   ├── train.py
-│   ├── infer.py
-│   └── src/
-│       ├── config.py
-│       ├── model.py       # StandardScaler → PCA → KNN pipeline
-│       └── utils.py       # FacePreprocessor, FeatureExtractor, plotting
-└── demo/                  # Reusable demo scripts (all three models)
-    ├── demo_resnet50.py   # MediaPipe face detection + ResNet50
-    ├── demo_arcface.py    # DeepFace ArcFace + LogisticRegression
-    ├── demo_traditional.py# Haar cascade + HOG/LBP/color/Gabor/GLCM
-    └── capture_faces.py   # Webcam face capture for training data
-```
+---
 
-## Quick Start (ArcFace — recommended)
-
-ArcFace uses a pre-trained face recognition model so it works well with minimal data.
+## 🚀 Quick Start
 
 ```bash
-# 1. Install dependencies
-pip install deepface opencv-python numpy scikit-learn tqdm
+# 1. Install
+pip install deepface opencv-python numpy
 
-# 2. Capture face photos (press SPACE to capture, ESC to quit)
-python demo/capture_faces.py --name "Me"
-python demo/capture_faces.py --name "Friend"   # add more people for 1-to-N
+# 2. Register yourself (press SPACE to capture ~10 photos)
+python demo/live_recognition.py --register "You"
 
-# 3. Train classifier (embeddings + LogisticRegression)
-python arcface/train_arcface.py
+# 3. Add more people
+python demo/live_recognition.py --register "Friend"
 
-# 4. Run live webcam demo
+# 4. Run live recognition (mirrored view, always-on-top window)
+python demo/live_recognition.py --webcam
+```
+
+### Commands
+
+| Command | What it does |
+|---------|-------------|
+| `--register "Name"` | Capture face photos for a new person |
+| `--register "Name" --count 5` | Capture only 5 photos |
+| `--webcam` | Start live recognition |
+| `--list` | Show all registered people |
+| `--camera 1` | Use a different camera |
+
+### Controls
+
+| Key | Action |
+|-----|--------|
+| `SPACE` | Capture a photo (during registration) |
+| `ESC` | Exit |
+
+---
+
+## 📁 Project
+
+```
+├── demo/
+│   ├── live_recognition.py      ⭐ Register + recognize (no training)
+│   ├── demo_arcface.py           ArcFace + trained classifier
+│   ├── demo_resnet50.py          MediaPipe + ResNet50
+│   ├── demo_traditional.py       Haar cascade + hand-crafted features
+│   ├── capture_faces.py          Dataset capture for training
+│   └── check_camera.py           Debug which cameras are available
+│
+├── Resnet50/                     PyTorch ResNet50 pipeline
+├── arcface/                      DeepFace ArcFace pipeline
+└── traditional/                  Traditional CV pipeline
+```
+
+---
+
+## How it works
+
+1. **Register** — captures webcam photos → extracts ArcFace embeddings → saves to `gallery.pkl`
+2. **Recognize** — detects faces with Haar Cascade → extracts embeddings → matches by cosine similarity
+
+Runs on separate threads so the camera stays smooth regardless of recognition speed.
+
+---
+
+## Other approaches
+
+| Script | Face Detection | Recognition | Needs training |
+|--------|---------------|-------------|:---:|
+| `demo/live_recognition.py` ⭐ | Haar Cascade | ArcFace + cosine similarity | ❌ |
+| `demo/demo_arcface.py` | RetinaFace | ArcFace + LogisticRegression | ✅ |
+| `demo/demo_resnet50.py` | MediaPipe | Fine-tuned ResNet50 | ✅ |
+| `demo/demo_traditional.py` | Haar Cascade | HOG/LBP/... + PCA + KNN | ✅ |
+
+```bash
+python demo/demo_resnet50.py --image photo.jpg
 python demo/demo_arcface.py --webcam
-```
-
-## Demos
-
-All three demos support the same interface:
-
-```
-python demo/demo_resnet50.py --image path/to/photo.jpg   # single image
-python demo/demo_resnet50.py --webcam                     # live webcam
-```
-
-| Model | Face Detection | Classifier |
-|-------|---------------|------------|
-| ResNet50 | MediaPipe FaceMesh | Fine-tuned ResNet50 |
-| ArcFace | RetinaFace (DeepFace) | ArcFace embeddings + LogisticRegression |
-| Traditional | Haar Cascade | HOG+LBP+Color+Gabor+GLCM → PCA → KNN |
-
-## Training
-
-Each model needs to be trained on a dataset organized as `train/<person>/<images>.jpg`:
-
-```bash
-python Resnet50/train.py          # produces models/best_model.pth
-python arcface/train_arcface.py   # produces arcface_classifier.pkl
-python traditional/train.py       # produces models/traditional_pipeline.pkl
 ```
