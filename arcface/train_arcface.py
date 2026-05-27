@@ -13,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 # PATH
 # ===================================================
 
-TRAIN_DIR = r"C:\Users\Admin\OneDrive\Desktop\Computer Vision Project\venv_arcface\processed_dataset\train"
+TRAIN_DIR = os.path.join(os.path.dirname(__file__), "..", "demo", "captured_data", "train")
 
 MODEL_SAVE = "arcface_classifier.pkl"
 

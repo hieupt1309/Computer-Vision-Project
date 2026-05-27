@@ -14,7 +14,7 @@ from sklearn.metrics import (
 # PATH
 # ===================================================
 
-TEST_DIR = r"C:\Users\Admin\OneDrive\Desktop\Computer Vision Project\venv_arcface\processed_dataset\test"
+TEST_DIR = os.path.join(os.path.dirname(__file__), "..", "demo", "captured_data", "test")
 
 MODEL_PATH = "arcface_classifier.pkl"
 

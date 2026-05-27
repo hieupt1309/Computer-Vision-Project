@@ -1,4 +1,5 @@
 import os
+import json
 import torch
 import torch.nn as nn
 
@@ -380,3 +381,8 @@ print(
     f"Best Val Acc: "
     f"{best_acc:.4f}"
 )
+
+os.makedirs("models", exist_ok=True)
+with open("models/class_to_idx.json", "w") as f:
+    json.dump(train_set.class_to_idx, f, indent=2)
+print("Class mapping saved to models/class_to_idx.json")
