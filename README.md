@@ -7,6 +7,8 @@
 
 **Zero-shot 1-to-N face identification** — register multiple people from webcam, then identify who appears in front of the camera. No training needed.
 
+Also includes trained alternatives: ArcFace + LogisticRegression, fine-tuned ResNet50, custom ResNet50 from scratch (metric learning), EfficientNet-B1, and traditional hand-crafted features.
+
 ---
 
 ## 🚀 Quick Start
@@ -32,6 +34,7 @@ python demo/live_recognition.py --webcam
 | `--register "Name"` | Capture face photos for a new person |
 | `--register "Name" --count 5` | Capture only 5 photos |
 | `--webcam` | Start live recognition |
+| `--image photo.jpg` | Recognize faces in a single image |
 | `--list` | Show all registered people |
 | `--camera 1` | Use a different camera |
 
@@ -44,20 +47,53 @@ python demo/live_recognition.py --webcam
 
 ---
 
-## 📁 Project
+## 📁 Project Structure
 
 ```
-├── demo/
-│   ├── live_recognition.py      ⭐ Register + recognize (no training)
-│   ├── demo_arcface.py           ArcFace + trained classifier
-│   ├── demo_resnet50.py          MediaPipe + ResNet50
-│   ├── demo_traditional.py       Haar cascade + hand-crafted features
-│   ├── capture_faces.py          Dataset capture for training
-│   └── check_camera.py           Debug which cameras are available
+├── demo/                           Demo scripts (ready to run)
+│   ├── live_recognition.py    ⭐  Zero-shot: register + recognize, no training
+│   ├── demo_arcface.py            ArcFace + LogisticRegression
+│   ├── demo_resnet50.py           MediaPipe + fine-tuned ResNet50
+│   ├── demo_traditional.py        Haar cascade + hand-crafted features
+│   ├── check_camera.py            Debug available cameras
+│   ├── gallery.pkl                Saved face embeddings (your registered data)
+│   └── photo.jpg                  Sample image for testing
 │
-├── Resnet50/                     PyTorch ResNet50 pipeline
-├── arcface/                      DeepFace ArcFace pipeline
-└── traditional/                  Traditional CV pipeline
+├── arcface/                        ArcFace embeddings + LogisticRegression
+│   ├── train_arcface.py            Extract embeddings → train classifier
+│   ├── evaluate_arcface.py         Test set evaluation
+│   ├── evaluate_verification.py    1-to-1 verification evaluation
+│   └── requirements.txt
+│
+├── Resnet50/                       Fine-tuned ResNet50 (PyTorch)
+│   ├── train.py                    Training script
+│   ├── model.py                    ResNet50 + custom FC head
+│   ├── dataset.py                  FaceDataset loader
+│   ├── preprocessing.py            MediaPipe face alignment + cropping
+│   ├── split_dataset.py            Train/val split
+│   ├── evaluate_identification.py  Test set evaluation
+│   └── demo.py                     Standalone demo
+│
+├── resnet_build/                   ResNet50 from scratch (metric learning)
+│   ├── model.py                    Custom ResNet with Bottleneck blocks
+│   ├── dataset.py                  FaceDataset loader
+│   ├── train.py                    Train embedding model + classifier
+│   ├── extract_embeddings.py       Extract gallery embeddings after training
+│   └── evaluate_identification.py  Top-1 / Top-5 via cosine similarity
+│
+├── efficientnet/                   EfficientNet-B1 (PyTorch)
+│   └── train_efficientnet.py       Training script with mixed precision
+│
+├── traditional/                    Hand-crafted features (no deep learning)
+│   ├── train.py                    Feature extraction → PCA → KNN
+│   ├── infer.py                    Inference script
+│   └── src/
+│       ├── config.py               Paths and hyperparameters
+│       ├── model.py                StandardScaler → PCA → KNN pipeline
+│       └── utils.py                FacePreprocessor, FeatureExtractor, plotting
+│
+├── main.tex                        Beamer presentation (LaTeX)
+└── README.md
 ```
 
 ---
@@ -75,33 +111,20 @@ Runs on separate threads so the camera stays smooth regardless of recognition sp
 
 ### 🎯 ArcFace + LogisticRegression
 
-Uses DeepFace ArcFace embeddings (pre-trained on millions of faces) with a LogisticRegression classifier trained on your dataset. More accurate than the zero-shot approach but requires a training step.
+Uses DeepFace ArcFace embeddings (pre-trained on millions of faces) with a LogisticRegression classifier. More accurate than zero-shot but requires a training step.
 
 **Step 1 — Prepare dataset**
 
-Organize face images into folders by person:
+Face images organized by person:
 
 ```
 demo/arcface_data/train/
-├── PersonA/
-│   ├── 001.jpg
-│   ├── 002.jpg
-│   └── ...
-├── PersonB/
-│   ├── 001.jpg
-│   └── ...
+├── PersonA/  *.jpg
+├── PersonB/  *.jpg
 └── ...
 ```
 
-You can use the capture tool:
-```bash
-python demo/capture_faces.py --name "PersonA"
-python demo/capture_faces.py --name "PersonB"
-```
-
 **Step 2 — Train**
-
-Extracts ArcFace embeddings from all images, then trains a LogisticRegression classifier:
 
 ```bash
 python arcface/train_arcface.py
@@ -110,110 +133,115 @@ python arcface/train_arcface.py
 **Step 3 — Run demo**
 
 ```bash
-# Single image
-python demo/demo_arcface.py --image path/to/photo.jpg
-
-# Webcam (uses RetinaFace detection, slower but more accurate)
+python demo/demo_arcface.py --image photo.jpg
 python demo/demo_arcface.py --webcam
 ```
 
 ---
 
-### 🧬 ResNet50 (PyTorch)
+### 🧬 ResNet50 (fine-tuned)
 
-Fine-tunes a ResNet50 on your face dataset. Requires more data per person but gives a dedicated neural network classifier.
+Fine-tunes a torchvision ResNet50 on your face dataset. Uses MediaPipe for face alignment.
 
-**Step 1 — Prepare dataset**
-
-Similar structure as ArcFace. Use MediaPipe to preprocess (align + crop faces):
+**Step 1 — Preprocess dataset**
 
 ```bash
-# First, organize raw images:
-#   raw_dataset/train/PersonA/*.jpg
-#   raw_dataset/test/PersonA/*.jpg
-
-# Then preprocess: detects faces, aligns by eyes, crops to 112x112
-python Resnet50/preprocessing.py
-
-# Split training set into train/val (85/15)
-python Resnet50/split_dataset.py
+# Organize raw images in raw_dataset/train/<person>/*.jpg
+python Resnet50/preprocessing.py      # MediaPipe align + crop → 112x112
+python Resnet50/split_dataset.py      # 85/15 train/val split
 ```
 
-**Step 2 — Update paths**
+**Step 2 — Update paths & train**
 
-Edit `Resnet50/train.py` to point `TRAIN_DIR` and `VAL_DIR` to your split dataset.
-
-**Step 3 — Train**
+Edit `TRAIN_DIR` / `VAL_DIR` in `Resnet50/train.py`, then:
 
 ```bash
 python Resnet50/train.py
 ```
 
-Saves best model to `Resnet50/models/best_model.pth` + class mapping to `Resnet50/models/class_to_idx.json`.
+Saves `Resnet50/models/best_model.pth` + `class_to_idx.json`.
 
-**Step 4 — Run demo**
+**Step 3 — Run demo**
 
 ```bash
-# Single image
-python demo/demo_resnet50.py --image path/to/photo.jpg
-
-# Webcam (uses MediaPipe, smooth)
+python demo/demo_resnet50.py --image photo.jpg
 python demo/demo_resnet50.py --webcam
+```
+
+---
+
+### 🧬 ResNet50 from scratch (metric learning)
+
+Custom ResNet50 implementation with Bottleneck blocks. Trains L2-normalized embeddings via a linear classifier, then evaluates by cosine similarity (Top-1 / Top-5).
+
+```bash
+python resnet_build/train.py                 # trains embedding model
+python resnet_build/extract_embeddings.py    # builds gallery.pkl
+python resnet_build/evaluate_identification.py
+```
+
+---
+
+### ⚡ EfficientNet-B1
+
+EfficientNet-B1 with transfer learning. Uses progressive unfreezing (backbone frozen for first 5 epochs). Mixed precision training with label smoothing.
+
+```bash
+python efficientnet/train_efficientnet.py
 ```
 
 ---
 
 ### 🏗️ Traditional CV
 
-Hand-crafted features (HOG, LBP, color histograms, Gabor filters, GLCM) → PCA → KNN. No deep learning needed, fully interpretable. Can optionally auto-download the VGGFace2 dataset via kagglehub.
+Hand-crafted features (HOG, LBP, color histograms, Gabor filters, GLCM) → PCA → KNN. No GPU needed.
 
 **Step 1 — Prepare dataset**
 
-Place images in `traditional/data/train/<person>/` and `traditional/data/test/<person>/`:
-
 ```
-traditional/data/train/
-├── PersonA/
-│   ├── img1.jpg
-│   └── ...
-├── PersonB/
-│   └── ...
-└── ...
+traditional/data/train/<person>/*.jpg
+traditional/data/test/<person>/*.jpg
 ```
 
-Or let it auto-download VGGFace2 (requires kagglehub):
+Or auto-download VGGFace2 via kagglehub:
 ```bash
 pip install kagglehub
-# Then run train.py and it downloads on first run if data dir is empty
+python traditional/train.py   # downloads if data dir is empty
 ```
 
-**Step 2 — Train**
-
-Extracts HOG + LBP + color histogram + Gabor + GLCM features → PCA → KNN:
+**Step 2 — Train & demo**
 
 ```bash
 python traditional/train.py
-```
-
-Saves pipeline to `traditional/models/traditional_pipeline.pkl`.
-
-**Step 3 — Run demo**
-
-```bash
-# Single image
-python demo/demo_traditional.py --image path/to/photo.jpg
-
-# Webcam
 python demo/demo_traditional.py --webcam
 ```
 
 ---
 
-### Comparison
+## Comparison
 
 | Approach | Face Detection | Classifier | Training | Best for |
 |----------|---------------|------------|:--------:|----------|
 | ⭐ Live Recognition | Haar Cascade | ArcFace + cosine similarity | ❌ | Quick demo, few photos |
 | 🎯 ArcFace + LR | RetinaFace | ArcFace + LogisticRegression | ✅ | Accuracy, small datasets |
-| 🧬 ResNet50 | MediaPipe | Fine-tuned ResNet50 | ✅ | Large datasets, GPU |
+| 🧬 ResNet50 (fine-tuned) | MediaPipe | Fine-tuned ResNet50 | ✅ | Large datasets, GPU |
+| 🧬 ResNet50 (scratch) | — | Custom embedding + cosine sim | ✅ | Metric learning research |
+| ⚡ EfficientNet-B1 | — | Fine-tuned EfficientNet-B1 | ✅ | Higher accuracy, GPU |
 | 🏗️ Traditional CV | Haar Cascade | HOG/LBP/... + PCA + KNN | ✅ | No GPU, interpretability |
+
+---
+
+## 📦 Dependencies
+
+| Package | Used by |
+|---------|---------|
+| `deepface` | Live recognition, ArcFace pipeline |
+| `opencv-python` | All demos, face detection, webcam |
+| `numpy` | All pipelines |
+| `torch` + `torchvision` | ResNet50, EfficientNet, resnet_build |
+| `mediapipe` | ResNet50 preprocessing, ResNet50 demo |
+| `scikit-learn` | ArcFace (LR), Traditional (PCA/KNN) |
+| `scikit-image` | Traditional (HOG, LBP, GLCM) |
+| `matplotlib` | Traditional (visualization) |
+| `tqdm` | Training progress bars |
+| `kagglehub` | Optional: Traditional auto-download |
