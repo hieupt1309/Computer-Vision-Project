@@ -1,8 +1,11 @@
 import os
 import numpy as np
+from .dataloader import DataLoader
 
 # Base directory for the traditional pipeline (traditional/)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+dataloader = DataLoader(base_dir=BASE_DIR)
+dataloader.setup_dataset()
 
 # Paths (Conforms to Kaggle dataset structure: train and test)
 DATA_DIR = os.path.join(BASE_DIR, "data")
@@ -15,35 +18,6 @@ MODEL_PATH = os.path.join(MODELS_DIR, "traditional_pipeline.pkl")
 # Dataset limits (set to None to run on the entire dataset)
 MAX_IDENTITIES = 20
 MAX_IMAGES_PER_IDENTITY = 30
-
-def check_data_dir(d):
-    return os.path.exists(d) and len([sub for sub in os.listdir(d) if os.path.isdir(os.path.join(d, sub))]) > 0
-
-# If local directories are not found or empty, download and copy from kagglehub
-if not (check_data_dir(GALLERY_DIR) and check_data_dir(PROBE_DIR)):
-    try:
-        import kagglehub
-        import shutil
-        print(f"Dataset not found locally. Downloading vggface2 dataset directly to {DATA_DIR}...")
-        
-        # Download (non-blocking, anonymous, and cached)
-        kaggle_path = kagglehub.dataset_download("trunghieupham130906/vggface2")
-        
-        # Copy raw_dataset/train and raw_dataset/test directly into data/train and data/test
-        src_train = os.path.join(kaggle_path, "raw_dataset", "train")
-        src_test = os.path.join(kaggle_path, "raw_dataset", "test")
-        
-        print(f"Copying dataset files to local project data folder: {DATA_DIR}...")
-        os.makedirs(DATA_DIR, exist_ok=True)
-        
-        if os.path.exists(src_train):
-            shutil.copytree(src_train, GALLERY_DIR, dirs_exist_ok=True)
-        if os.path.exists(src_test):
-            shutil.copytree(src_test, PROBE_DIR, dirs_exist_ok=True)
-            
-        print("Dataset setup completed successfully!")
-    except Exception as e:
-        print(f"Warning: Failed to set up dataset ({e}). Falling back to default paths.")
 
 # Preprocessing Settings
 IMAGE_SIZE = 128
