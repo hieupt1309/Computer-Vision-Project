@@ -1,0 +1,7 @@
+numpy
+opencv-python
+matplotlib
+scikit-learn
+scikit-image
+kagglehub==1.0.1
+kagglesdk==0.1.23
