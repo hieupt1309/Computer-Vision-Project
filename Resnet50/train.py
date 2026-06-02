@@ -33,22 +33,9 @@ if torch.cuda.is_available():
 # PATH
 # ==================================================
 
-TRAIN_DIR = (
-    r"C:\Users\Admin"
-    r"\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning"
-    r"\dataset_split\train"
-)
+TRAIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "dataset_split", "train")
 
-VAL_DIR = (
-    r"C:\Users\Admin"
-    r"\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning"
-    r"\dataset_split\val"
-)
-
+VAL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "dataset_split", "val")
 
 # ==================================================
 # SETTINGS

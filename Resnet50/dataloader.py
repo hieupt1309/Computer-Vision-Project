@@ -12,7 +12,6 @@ class DataLoader:
         self.probe_dir = os.path.join(self.raw_dir, "test")
         self.result_dir = os.path.join(base_dir, "result")
         self.models_dir = os.path.join(base_dir, "models")
-        self.model_path = os.path.join(self.models_dir, "traditional_pipeline.pkl")
     
     def check_data_dir(self, d):
         return os.path.exists(d) and len([sub for sub in os.listdir(d) if os.path.isdir(os.path.join(d, sub))]) > 0

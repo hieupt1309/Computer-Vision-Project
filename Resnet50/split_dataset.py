@@ -7,19 +7,9 @@ import shutil
 # PATH
 # ==================================================
 
-INPUT_TRAIN_DIR = (
-    r"C:\Users\Admin\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning"
-    r"\processed_dataset\train"
-)
+INPUT_TRAIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "processed_dataset", "train")
 
-OUTPUT_DIR = (
-    r"C:\Users\Admin\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning"
-    r"\dataset_split"
-)
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "dataset_split")
 
 
 # ==================================================

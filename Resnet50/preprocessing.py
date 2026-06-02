@@ -2,24 +2,17 @@ import os
 import cv2
 import numpy as np
 import mediapipe as mp
-
+from dataloader import DataLoader 
 
 # ==================================================
 # PATH
 # ==================================================
+BASE_DIR = os.path.dirname(__file__)
+dataloader = DataLoader(base_dir=BASE_DIR)
+dataloader.setup_dataset()
 
-INPUT_DIR = (
-    r"C:\Users\Admin\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning\raw_dataset"
-)
-
-OUTPUT_DIR = (
-    r"C:\Users\Admin\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning\processed_dataset"
-)
-
+INPUT_DIR = os.path.join(os.path.join(BASE_DIR, "data"), "raw_dataset")
+OUTPUT_DIR = os.path.join(os.path.join(BASE_DIR, "data"), "processed_dataset")
 
 # ==================================================
 # SETTINGS
