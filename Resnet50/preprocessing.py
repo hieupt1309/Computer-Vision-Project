@@ -7,7 +7,7 @@ from dataloader import DataLoader
 # ==================================================
 # PATH
 # ==================================================
-BASE_DIR = os.path.dirname(__file__)
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 dataloader = DataLoader(base_dir=BASE_DIR)
 dataloader.setup_dataset()
 

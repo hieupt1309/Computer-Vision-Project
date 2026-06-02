@@ -7,9 +7,9 @@ import shutil
 # PATH
 # ==================================================
 
-INPUT_TRAIN_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "processed_dataset", "train")
+INPUT_TRAIN_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "processed_dataset", "train")
 
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "dataset_split")
+OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "dataset_split")
 
 
 # ==================================================

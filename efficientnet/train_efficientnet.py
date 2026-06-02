@@ -14,31 +14,15 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 # PATHS
 # ============================================================
 
-TRAIN_DIR = (
-    r"C:\Users\Admin"
-    r"\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning"
-    r"\dataset_split\train"
-)
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
-VAL_DIR = (
-    r"C:\Users\Admin"
-    r"\OneDrive\Desktop"
-    r"\Computer Vision Project"
-    r"\venv_deeplearning"
-    r"\dataset_split\val"
-)
+TRAIN_DIR = os.path.join(BASE_DIR, "data", "dataset_split", "train") 
 
-TEST_DIR = (
-    r"C:\Users\Admin\OneDrive\Desktop\Computer Vision Project"
-    r"\venv_deeplearning\processed_dataset\test"
-)
+VAL_DIR = os.path.join(BASE_DIR, "data", "dataset_split", "val")
 
-SAVE_PATH = (
-    r"C:\Users\Admin\OneDrive\Desktop\Computer Vision Project"
-    r"\venv_deeplearning\efficientnet\best_efficientnet_b1.pth"
-)
+TEST_DIR = os.path.join(BASE_DIR, "data", "processed_dataset", "test")
+
+SAVE_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "models", "best_efficientnet_b1.pth")
 
 # ============================================================
 # CONFIG
