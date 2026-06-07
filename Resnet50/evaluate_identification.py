@@ -23,9 +23,9 @@ print("Device:", device)
 # PATH
 # ==================================================
 
-MODEL_PATH = "models/best_model.pth"
+MODEL_PATH = "best_model_new.pth"
 
-TEST_DIR = r"C:\Users\Admin\OneDrive\Desktop\Computer Vision Project\venv_deeplearning\processed_dataset\test"
+TEST_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "dataset_split", "val")
 
 
 # ==================================================
@@ -68,12 +68,15 @@ num_classes = len(test_set.class_to_idx)
 
 model = get_model(num_classes)
 
-model.load_state_dict(
-    torch.load(
-        MODEL_PATH,
-        map_location=device
-    )
+state = torch.load(
+    MODEL_PATH,
+    map_location=device
 )
+new_state = {}
+for k, v in state.items():
+    key = k.replace("embedding", "fc") if k.startswith("embedding") else k
+    new_state[key] = v
+model.load_state_dict(new_state)
 
 model = model.to(device)
 model.eval()
