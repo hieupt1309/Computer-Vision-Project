@@ -16,11 +16,8 @@ IMAGE_SIZE = 112
 def get_model(num_classes):
     model = models.resnet50(weights=None)
     model.fc = nn.Sequential(
-        nn.Linear(2048, 1024),
-        nn.BatchNorm1d(1024),
-        nn.ReLU(inplace=True),
         nn.Dropout(0.3),
-        nn.Linear(1024, num_classes)
+        nn.Linear(2048, num_classes)
     )
     return model
 
@@ -87,12 +84,7 @@ transform = transforms.Compose([
 
 def load_model(model_path, num_classes):
     model = get_model(num_classes)
-    state = torch.load(model_path, map_location=device)
-    new_state = {}
-    for k, v in state.items():
-        key = k.replace("embedding", "fc") if k.startswith("embedding") else k
-        new_state[key] = v
-    model.load_state_dict(new_state)
+    model.load_state_dict(torch.load(model_path, map_location=device))
     model = model.to(device)
     model.eval()
     return model
@@ -210,7 +202,7 @@ def main():
     parser.add_argument("--image", type=str, help="Path to input image file")
     parser.add_argument("--webcam", action="store_true", help="Run real-time webcam demo")
     parser.add_argument("--camera", type=int, default=0, help="Camera device ID (default: 0)")
-    parser.add_argument("--model", type=str, default="best_model_new.pth", help="Path to model weights")
+    parser.add_argument("--model", type=str, default="models/best_model.pth", help="Path to model weights")
     parser.add_argument("--mapping", type=str, default="models/class_to_idx.json", help="Path to class mapping JSON")
     parser.add_argument("--data-dir", type=str, help="Dataset directory to infer class names (fallback if no mapping)")
     args = parser.parse_args()
