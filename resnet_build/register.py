@@ -107,21 +107,29 @@ def recognize(model, img_path, threshold=0.35):
     if best_sim < threshold: return None, best_sim
     return best_name, best_sim
 
-def live(model, threshold=0.35):
+def live(model, threshold=0.55, skip=3):
     cap = cv2.VideoCapture(0)
     cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
+    label, faces, frame_count = "No face", [], 0
     print("Press ESC to exit")
     while True:
         ret, frame = cap.read()
         if not ret: break
+        frame_count += 1
         display = cv2.flip(frame, 1)
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        faces = cascade.detectMultiScale(gray, 1.1, 5, minSize=(50, 50))
-        for (x, y, w, h) in faces:
+        if frame_count % skip == 0:
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            faces = cascade.detectMultiScale(gray, 1.1, 5, minSize=(50, 50))
+            if len(faces) > 0:
+                x, y, w, h = faces[0]
+                name, sim = recognize(model, frame[y:y+h, x:x+w], threshold)
+                label = f"{name} ({sim:.2f})" if name else "Unknown"
+            else:
+                label = "No face"
+        if len(faces) > 0:
+            x, y, w, h = faces[0]
             mx = display.shape[1] - x - w
             cv2.rectangle(display, (mx, y), (mx + w, y + h), (0, 255, 0), 2)
-            name, sim = recognize(model, frame[y:y+h, x:x+w], threshold)
-            label = f"{name} ({sim:.2f})" if name else "Unknown"
             cv2.putText(display, label, (mx, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
         cv2.imshow("ResNet-Build Recognition", display)
         if cv2.waitKey(1) & 0xFF == 27: break
@@ -158,4 +166,4 @@ if __name__ == "__main__":
         if name: print(f"Recognized: {name} ({sim:.4f})")
         else: print(f"No match ({sim:.4f})")
     elif cmd == "--live":
-        live(model, float(sys.argv[2]) if len(sys.argv) > 2 else 0.35)
+        live(model, float(sys.argv[2]) if len(sys.argv) > 2 else 0.55)
